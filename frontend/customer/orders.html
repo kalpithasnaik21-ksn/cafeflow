@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>My Orders ☕ | CafeFlow</title>
+
+  <!-- Orders Page CSS -->
+  <link rel="stylesheet" href="../css/orders.css?v=2026">
+
+  <!-- Responsive -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+  <!-- ===============================
+       NAVBAR
+  ================================ -->
+<header class="navbar">
+  <div class="logo">☕ CafeFlow</div>
+
+  <div class="admin-nav">
+    <a href="/customer/menu.html">Menu</a>
+    <a href="/customer/cart.html">Cart</a>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+</header>
+
+
+
+
+  <!-- ===============================
+       MAIN CONTENT
+  ================================ -->
+  <main class="orders-page">
+
+    <!-- Page Header -->
+    <section class="orders-header">
+      <h1>My Orders</h1>
+      <p class="subtitle">Track your recent orders</p>
+    </section>
+
+    <!-- Orders Container -->
+    <section class="orders-section">
+      <div id="orders-container" class="orders-grid">
+        <!-- Orders injected by orders.js -->
+        <p class="muted center">Loading your orders…</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===============================
+       FOOTER (Optional, clean)
+  ================================ -->
+  <footer class="footer">
+    <p>© 2026 CafeFlow • Freshly brewed ☕</p>
+  </footer>
+
+  <!-- ===============================
+       SCRIPTS
+  ================================ -->
+  <script src="../js/orders.js"></script>
+
+  <script>
+    function logout() {
+      window.location.href = "../auth/login.html";
+    }
+  </script>
+  <div id="toast" class="toast"></div>
+
+<div id="cancelConfirmModal" class="confirm-modal hidden">
+  <div class="confirm-box">
+    <h2>Cancel Order</h2>
+
+    <p><strong>Are you sure you want to cancel this order?</strong></p>
+
+    <div class="confirm-actions">
+      <button class="btn-confirm-cancel" onclick="confirmCancel()">
+        Cancel Order
+      </button>
+
+      <button class="btn-close" onclick="closeCancelModal()">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+
+</body>
+</html>

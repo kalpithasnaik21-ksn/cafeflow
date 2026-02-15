@@ -1,0 +1,129 @@
+### REGISTER
+POST http://localhost:5000/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Admin",
+  "email": "admin@cafeflow.com",
+  "password": "admin123",
+  "phone": "8888888888"
+}
+
+### LOGIN
+# @name login
+POST http://localhost:5000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@cafeflow.com",
+  "password": "admin123"
+}
+
+### ME (SESSION TEST)
+GET http://localhost:5000/api/auth/me
+Cookie: {{login.response.headers.set-cookie}}
+
+### GET CATEGORIES
+GET http://localhost:5000/api/menu/categories
+
+### GET PRODUCTS BY CATEGORY (Coffee)
+GET http://localhost:5000/api/menu/categories/1/products
+
+### ADMIN ADD CATEGORY
+POST http://localhost:5000/api/admin/categories
+Content-Type: application/json
+Cookie: {{login.response.headers.set-cookie}}
+
+{
+  "name": "Desserts",
+  "description": "Sweet treats"
+}
+
+### ADMIN ADD PRODUCT
+POST http://localhost:5000/api/admin/products
+Content-Type: application/json
+Cookie: {{login.response.headers.set-cookie}}
+
+{
+  "name": "Chocolate Muffin",
+  "category_id": 4,
+  "description": "Soft chocolate muffin",
+  "price": 90,
+  "image_url": "/images/products/choco-muffin.jpg"
+}
+
+### PLACE ORDER
+POST http://localhost:5000/api/orders
+Content-Type: application/json
+Cookie: {{login.response.headers.set-cookie}}
+
+{
+  "order_type": "takeaway",
+  "items": [
+    { "product_id": 22, "quantity": 1 },
+    { "product_id": 28, "quantity": 2 }
+  ]
+}
+
+### ADMIN – VIEW ALL ORDERS
+GET http://localhost:5000/api/admin/orders
+Cookie: {{login.response.headers.set-cookie}}
+
+### ADMIN – UPDATE ORDER STATUS
+PUT http://localhost:5000/api/admin/orders/10/status
+Content-Type: application/json
+Cookie: {{login.response.headers.set-cookie}}
+
+{
+  "status": "ready"
+}
+
+### CUSTOMER – ORDER HISTORY
+GET http://localhost:5000/api/orders
+Cookie: {{login.response.headers.set-cookie}}
+
+### ADMIN – CONFIRM ORDER
+PUT http://localhost:5000/api/admin/orders/18/status
+Content-Type: application/json
+
+{
+  "status": "confirmed"
+}
+
+### ADMIN – START PREPARING
+PUT http://localhost:5000/api/admin/orders/18/status
+Content-Type: application/json
+
+{
+  "status": "preparing"
+}
+
+### ADMIN – OUT FOR DELIVERY
+PUT http://localhost:5000/api/admin/orders/18/status
+Content-Type: application/json
+
+{
+  "status": "out_for_delivery"
+}
+
+### ADMIN – COMPLETE ORDER
+PUT http://localhost:5000/api/admin/orders/18/status
+Content-Type: application/json
+
+{
+  "status": "completed"
+}
+
+### ADMIN – GET ORDER DETAILS
+GET http://localhost:5000/api/admin/orders/18
+
+### ADMIN – DASHBOARD SUMMARY
+GET http://localhost:5000/api/admin/orders/dashboard
+
+###
+PUT http://localhost:5000/api/admin/orders/39/status
+Content-Type: application/json
+
+{
+  "status": "ready"
+}

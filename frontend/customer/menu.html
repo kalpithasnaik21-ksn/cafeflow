@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CafeFlow | Menu ☕</title>
+
+  <link rel="stylesheet" href="../css/menu.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+  <!-- NAVBAR -->
+  <header class="navbar">
+    <div class="logo">☕ CafeFlow</div>
+    <nav>
+      <a href="../customer/orders.html">My Orders</a>
+      <a href="../customer/cart.html" class="cart-link">
+        🛒 Cart <span id="cartCount">0</span>
+      </a>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </nav>
+  </header>
+
+  <!-- HERO -->
+  <section class="menu-hero">
+    <h1>Discover Your Perfect Brew ☕</h1>
+    <p>From handcrafted coffee to comfort food — all in one place</p>
+
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Search coffee, pizza, desserts..." />
+    </div>
+  </section>
+
+  <!-- FILTERS -->
+  <section class="filters">
+    <div class="categories">
+      <button class="cat active" data-cat="all">All</button>
+      <button class="cat" data-cat="coffee">Coffee</button>
+      <button class="cat" data-cat="tea">Tea</button>
+      <button class="cat" data-cat="mojito">Mojitos</button>
+      <button class="cat" data-cat="snacks">Snacks</button>
+      <button class="cat" data-cat="pizza">Pizza & Pasta</button>
+      <button class="cat" data-cat="dessert">Desserts</button>
+      <button class="cat" data-cat="shake">Milkshakes & Frappe</button>
+    </div>
+
+    <div class="veg-filter">
+      <button class="type active" data-type="all">All</button>
+      <button class="type" data-type="veg">🌱 Veg</button>
+      <button class="type" data-type="nonveg">🍗 Non-Veg</button>
+    </div>
+  </section>
+
+  <!-- PRODUCTS -->
+  <!-- PRODUCTS -->
+  <section class="menu-container">
+    <div class="products" id="productList">
+      <!-- Products rendered via JS -->
+    </div>
+  </section>
+
+
+  <script src="../js/menu.js"></script>
+</body>
+
+</html>

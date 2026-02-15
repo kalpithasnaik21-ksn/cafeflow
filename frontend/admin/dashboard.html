@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin | Orders Dashboard ☕</title>
+
+  <link rel="stylesheet" href="../css/dashboard.css" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
+    rel="stylesheet"
+  />
+</head>
+
+<body>
+
+  <!-- NAVBAR -->
+  <header class="navbar">
+    <div class="logo">☕ CafeFlow Admin</div>
+
+    <nav class="admin-nav">
+      <a href="admin-menu.html">Menu</a>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </nav>
+  </header>
+
+  <!-- PAGE -->
+  <main class="container">
+
+    <!-- PAGE HEADER -->
+    <section class="page-head">
+      <h1>Orders Dashboard</h1>
+      <p>Monitor and manage all customer orders</p>
+    </section>
+
+    <!-- STATUS STATS -->
+    <section class="stats-grid">
+      <div class="stat-card red">
+        <span>🔔 New Orders</span>
+        <h2 id="newOrders">0</h2>
+      </div>
+
+      <div class="stat-card orange">
+        <span>🔥 Active Orders</span>
+        <h2 id="activeOrders">0</h2>
+      </div>
+
+      <div class="stat-card green">
+        <span>🍽️ Ready Orders</span>
+        <h2 id="readyOrders">0</h2>
+      </div>
+
+      <div class="stat-card blue">
+        <span>✅ Completed</span>
+        <h2 id="completedOrders">0</h2>
+      </div>
+
+      <div class="stat-card grey">
+        <span>❌ Cancelled</span>
+        <h2 id="cancelledOrders">0</h2>
+      </div>
+    </section>
+
+    <!-- TOTAL / TODAY -->
+    <section class="summary-grid">
+      <div class="summary-card">
+        <span>📦 Total Orders</span>
+        <h2 id="totalOrders">0</h2>
+        <p>Since café started</p>
+      </div>
+
+      <div class="summary-card">
+        <span>📆 Orders Today</span>
+        <h2 id="todayOrders">0</h2>
+        <p>Placed today</p>
+      </div>
+    </section>
+
+    <!-- ORDERS TABLE -->
+    <section class="card table-card">
+      <h3>All Orders</h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Order #</th>
+            <th>Customer</th>
+            <th>Type</th>
+            <th>Items</th>
+            <th>Total</th>
+            <th>Time</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+
+        <tbody id="ordersTable">
+          <tr>
+            <td colspan="8" style="opacity:0.6; text-align:center;">
+              Loading orders…
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ORDER DETAILS MODAL -->
+    <div id="orderModal" class="modal hidden">
+      <div class="modal-content">
+        <h2>Order Details</h2>
+
+        <p id="mOrderNumber"></p>
+        <p id="mCustomer"></p>
+        <p id="mOrderType"></p>
+        <p id="mPayment"></p>
+
+        <hr />
+
+        <p id="mStatus"></p>
+
+        <ul id="mItems"></ul>
+
+        <h3 id="mTotal"></h3>
+
+        <div style="margin-top: 20px;">
+          <button class="action-btn" onclick="closeOrderModal()">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toast" class="toast hidden"></div>
+
+  </main>
+
+  <script src="../js/dashboard.js"></script>
+</body>
+</html>

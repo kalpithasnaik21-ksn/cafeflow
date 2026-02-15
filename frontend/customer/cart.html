@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your Cart ☕ | CafeFlow</title>
+
+  <!-- CART THEME CSS -->
+  <link rel="stylesheet" href="../css/cart.css" />
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+  <!-- NAVBAR -->
+
+  <nav class="navbar">
+    <div class="logo">
+      ☕ CafeFlow
+    </div>
+
+    <div class="admin-nav">
+      <a href="/customer/menu.html">Menu</a>
+      <a href="/customer/orders.html">My Orders</a>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+
+
+  <!-- CART PAGE -->
+  <main class="cart-page">
+
+    <!-- LEFT : ITEMS -->
+    <section class="cart-items-section">
+      <h1>Your Cart</h1>
+      <p class="subtext">Almost there — your coffee awaits ☕</p>
+
+      <div id="cart-items" class="cart-items">
+        <!-- Items injected by cart.js -->
+      </div>
+    </section>
+
+    <!-- RIGHT : SUMMARY -->
+    <aside class="cart-summary">
+      <h2>Order Summary</h2>
+
+      <div class="summary-row">
+        <span>Total</span>
+        <strong>₹<span id="total">0</span></strong>
+      </div>
+
+      <label for="orderType">Order Type</label>
+      <select id="orderType">
+        <option value="takeaway">Takeaway</option>
+        <option value="dine-in">Dine In</option>
+        <option value="delivery">Delivery</option>
+
+      </select>
+
+
+      <!-- Dynamic Fields -->
+      <div id="extraFields"></div>
+
+      <div class="order-note-section">
+        <label for="orderNote">Special Instructions (Optional)</label>
+        <textarea id="orderNote" placeholder="e.g. Less sugar, Extra spicy, No onions"></textarea>
+      </div>
+
+      <label>Payment Method</label>
+      <select id="paymentMode">
+        <option value="cash">Cash</option>
+        <option value="upi">UPI</option>
+      </select>
+
+      <button id="placeOrderBtn" onclick="handlePrimaryAction()">
+        Place Order ☕
+      </button>
+
+
+      <p class="quote">
+        “Life is too short for bad coffee.”
+      </p>
+    </aside>
+
+  </main>
+  <div id="toast" class="toast"></div>
+
+  <!-- ================= UPI MODAL ================= -->
+  <div id="upiModal">
+    <div class="upi-content">
+      <h2>Scan to Pay</h2>
+
+      <div class="upi-total">
+        Total: ₹ <span id="upiAmount"></span>
+      </div>
+
+      <img id="upiQrImg" alt="UPI QR">
+
+      <div class="upi-id">
+        <strong>UPI ID: cafeflow@upi</strong>
+      </div>
+
+      <input type="text" id="transactionIdInput" class="upi-input" placeholder="Enter UPI Transaction ID">
+
+      <div class="upi-actions">
+        <button class="btn-upi-confirm" onclick="verifyAndPlaceOrder()">
+          Verify & Place Order
+        </button>
+
+        <button class="btn-upi-close" onclick="closeUpiModal()">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/cart.js"></script>
+
+</body>
+
+</html>

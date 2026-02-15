@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login ☕ CafeFlow</title>
+  <link rel="stylesheet" href="../css/style.css?v=2026">
+</head>
+
+<body class="auth-page">
+
+  <div class="auth-wrapper">
+
+    <!-- LEFT BRAND SIDE -->
+    <div class="auth-left">
+      <div class="brand">☕ CafeFlow</div>
+
+      <h1>
+        Welcome<br />
+        <span>Back</span>
+      </h1>
+
+      <p class="tagline">
+        Log in to continue ordering seamlessly
+        and manage your cafe experience.
+      </p>
+
+      <p class="quote">
+        “Coffee first. Everything else later.”
+      </p>
+    </div>
+
+    <!-- RIGHT FORM SIDE -->
+    <div class="auth-right">
+      <div class="auth-card">
+
+        <h2>Login</h2>
+        <p class="subtitle">Access your CafeFlow account</p>
+
+        <input id="email" type="email" placeholder="Email address" autocomplete="off" />
+        <input id="password" type="password" placeholder="Password" autocomplete="new-password" />
+
+        <!-- THEMED MESSAGE BOX -->
+        <div id="authMessage" class="auth-message"></div>
+
+        <button class="btn primary" onclick="login()">Login</button>
+
+        <p class="auth-link">
+          Don’t have an account?
+          <a href="register.html">Register</a>
+        </p>
+
+      </div>
+    </div>
+
+  </div>
+
+  <script src="../js/auth.js"></script>
+</body>
+
+</html>

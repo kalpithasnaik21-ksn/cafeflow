@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register ☕ CafeFlow</title>
+  <link rel="stylesheet" href="../css/style.css?v=2026">
+</head>
+
+<body class="auth-page">
+
+  <div class="auth-wrapper">
+
+    <!-- LEFT BRAND SIDE -->
+    <div class="auth-left">
+      <div class="brand">☕ CafeFlow</div>
+
+      <h1>
+        Join the<br />
+        <span>Coffee Flow</span>
+      </h1>
+
+      <p class="tagline">
+        Create your account and enjoy seamless ordering
+        with smarter cafe management.
+      </p>
+
+      <p class="quote">
+        “Life begins after coffee.”
+      </p>
+    </div>
+
+    <!-- RIGHT FORM SIDE -->
+    <div class="auth-right">
+      <div class="auth-card">
+
+        <h2>Create Account</h2>
+        <p class="subtitle">Start your CafeFlow journey</p>
+
+        <!-- IMPORTANT: fake fields to block autofill -->
+        <input type="text" style="display:none">
+        <input type="password" style="display:none">
+
+        <!-- Actual fields -->
+        <input id="name" type="text" placeholder="Full Name" autocomplete="off" />
+
+        <!-- use different autocomplete tokens -->
+        <input id="email" type="email" placeholder="Email Address" autocomplete="new-email" />
+
+        <input id="password" type="password" placeholder="Create Password" autocomplete="new-password" />
+
+        <input id="phone" type="tel" placeholder="Phone Number" autocomplete="off" />
+
+        <!-- themed message box (matches login) -->
+        <div id="authMessage" class="auth-message"></div>
+
+        <button class="btn primary" onclick="register()">
+          Register
+        </button>
+
+        <p class="auth-link">
+          Already have an account?
+          <a href="login.html">Login</a>
+        </p>
+
+      </div>
+    </div>
+
+  </div>
+
+  <script src="../js/auth.js"></script>
+</body>
+</html>
