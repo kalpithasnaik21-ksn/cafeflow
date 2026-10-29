@@ -54,6 +54,10 @@ exports.register = async (req, res) => {
 /* =========================
    LOGIN (ADMIN / CUSTOMER)
 ========================= */
+
+/* =========================
+   LOGIN (ADMIN / CUSTOMER)
+========================= */
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -79,7 +83,11 @@ exports.login = async (req, res) => {
 
     const user = users[0];
 
-    const isMatch = await bcrypt.compare(password, user.password_hash);
+    const isMatch = await bcrypt.compare(
+      password,
+      user.password_hash
+    );
+
     if (!isMatch) {
       return res.status(401).json({
         success: false,
@@ -87,26 +95,60 @@ exports.login = async (req, res) => {
       });
     }
 
-    // ✅ SAFE SESSION ASSIGNMENT (DO NOT OVERWRITE WHOLE SESSION)
-    req.session.user = {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role
-    };
+    // Regenerate the session after successful authentication.
+    req.session.regenerate(async (regenerateError) => {
+      if (regenerateError) {
+        console.error("Session regeneration error:", regenerateError);
 
-    await db.query(
-      "UPDATE users SET last_login = NOW() WHERE id = ?",
-      [user.id]
-    );
+        return res.status(500).json({
+          success: false,
+          message: "Unable to create login session"
+        });
+      }
 
-    return res.status(200).json({
-      success: true,
-      user: req.session.user
+      req.session.user = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      };
+
+      try {
+        await db.query(
+          "UPDATE users SET last_login = NOW() WHERE id = ?",
+          [user.id]
+        );
+
+        // Save the session before sending the login response.
+        req.session.save((saveError) => {
+          if (saveError) {
+            console.error("Session save error:", saveError);
+
+            return res.status(500).json({
+              success: false,
+              message: "Unable to save login session"
+            });
+          }
+
+          return res.status(200).json({
+            success: true,
+            message: "Login successful",
+            user: req.session.user
+          });
+        });
+      } catch (error) {
+        console.error("Login database error:", error);
+
+        return res.status(500).json({
+          success: false,
+          message: "Server error"
+        });
+      }
     });
 
   } catch (error) {
     console.error("Login error:", error);
+
     return res.status(500).json({
       success: false,
       message: "Server error"

@@ -7,7 +7,10 @@
   <title>CafeFlow | Menu ☕</title>
 
   <link rel="stylesheet" href="../css/menu.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
+    rel="stylesheet"
+  />
 </head>
 
 <body>
@@ -15,55 +18,72 @@
   <!-- NAVBAR -->
   <header class="navbar">
     <div class="logo">☕ CafeFlow</div>
+
     <nav>
       <a href="../customer/orders.html">My Orders</a>
+
       <a href="../customer/cart.html" class="cart-link">
         🛒 Cart <span id="cartCount">0</span>
       </a>
-      <button class="logout-btn" onclick="logout()">Logout</button>
+
+      <button type="button" class="logout-btn" onclick="logout()">
+        Logout
+      </button>
     </nav>
   </header>
 
   <!-- HERO -->
   <section class="menu-hero">
     <h1>Discover Your Perfect Brew ☕</h1>
-    <p>From handcrafted coffee to comfort food — all in one place</p>
+
+    <p>
+      From handcrafted coffee to comfort food — all in one place
+    </p>
 
     <div class="search-box">
-      <input type="text" id="searchInput" placeholder="Search coffee, pizza, desserts..." />
+      <input
+        type="search"
+        id="searchInput"
+        placeholder="Search coffee, pizza, desserts..."
+        aria-label="Search menu items"
+      />
     </div>
   </section>
 
-  <!-- FILTERS -->
+  <!-- CATEGORY FILTERS -->
   <section class="filters">
-    <div class="categories">
-      <button class="cat active" data-cat="all">All</button>
-      <button class="cat" data-cat="coffee">Coffee</button>
-      <button class="cat" data-cat="tea">Tea</button>
-      <button class="cat" data-cat="mojito">Mojitos</button>
-      <button class="cat" data-cat="snacks">Snacks</button>
-      <button class="cat" data-cat="pizza">Pizza & Pasta</button>
-      <button class="cat" data-cat="dessert">Desserts</button>
-      <button class="cat" data-cat="shake">Milkshakes & Frappe</button>
+
+    <div class="categories" aria-label="Menu categories">
+      <button type="button" class="cat active" data-cat="all">All</button>
+      <button type="button" class="cat" data-cat="coffee">Coffee</button>
+      <button type="button" class="cat" data-cat="tea">Tea</button>
+      <button type="button" class="cat" data-cat="mojito">Mojitos</button>
+      <button type="button" class="cat" data-cat="snacks">Snacks</button>
+      <button type="button" class="cat" data-cat="pizza">Pizza &amp; Pasta</button>
+      <button type="button" class="cat" data-cat="dessert">Desserts</button>
+      <button type="button" class="cat" data-cat="shake">
+        Milkshakes &amp; Frappe
+      </button>
     </div>
 
-    <div class="veg-filter">
-      <button class="type active" data-type="all">All</button>
-      <button class="type" data-type="veg">🌱 Veg</button>
-      <button class="type" data-type="nonveg">🍗 Non-Veg</button>
+    <!-- VEG / NON-VEG FILTERS -->
+    <div class="veg-filter" aria-label="Dietary filters">
+      <button type="button" class="type active" data-type="all">All</button>
+      <button type="button" class="type" data-type="veg">🌱 Veg</button>
+      <button type="button" class="type" data-type="nonveg">🍗 Non-Veg</button>
     </div>
+
   </section>
 
   <!-- PRODUCTS -->
-  <!-- PRODUCTS -->
-  <section class="menu-container">
-    <div class="products" id="productList">
-      <!-- Products rendered via JS -->
+  <main class="menu-container">
+    <div class="products" id="productList" aria-live="polite">
+      <p>Loading menu...</p>
     </div>
-  </section>
+  </main>
 
-
+  <!-- MENU JAVASCRIPT -->
   <script src="../js/menu.js"></script>
-</body>
 
+</body>
 </html>

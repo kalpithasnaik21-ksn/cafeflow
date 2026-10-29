@@ -1,51 +1,77 @@
+/*********************************
+ * CART LOGIC – CafeFlow
+ *********************************/
+
+const API_BASE_URL = "http://127.0.0.1:5000/api";
+
 const cartItemsDiv = document.getElementById("cart-items");
 const totalSpan = document.getElementById("total");
 
 let pendingOrderData = null;
 
 /* ================= SAFE GET CART ================= */
+
 function getCart() {
-  const rawCart = JSON.parse(localStorage.getItem("cart")) || [];
+  try {
+    const rawCart = JSON.parse(localStorage.getItem("cart")) || [];
 
-  const cleanCart = rawCart.filter(item => item.product_id);
+    if (!Array.isArray(rawCart)) return [];
 
-  if (cleanCart.length !== rawCart.length) {
-    console.warn("⚠ Corrupted cart items removed");
-    localStorage.setItem("cart", JSON.stringify(cleanCart));
+    const cleanCart = rawCart.filter(
+      item => item && item.product_id != null
+    );
+
+    if (cleanCart.length !== rawCart.length) {
+      console.warn("Corrupted cart items removed");
+      localStorage.setItem("cart", JSON.stringify(cleanCart));
+    }
+
+    return cleanCart;
+  } catch (error) {
+    console.error("Unable to read cart:", error);
+    return [];
   }
-
-  return cleanCart;
 }
 
 /* ================= LOAD CART ================= */
+
 function loadCart() {
+  if (!cartItemsDiv || !totalSpan) return;
+
   const cart = getCart();
   cartItemsDiv.innerHTML = "";
 
   let total = 0;
 
   cart.forEach((item, index) => {
-    const price = Number(item.price);
-    const qty = Number(item.quantity);
+    const price = Number(item.price) || 0;
+    const qty = Number(item.quantity) || 0;
 
     total += price * qty;
 
     const div = document.createElement("div");
     div.className = "cart-item";
 
-    div.innerHTML = `
-      <div class="item-info">
-        <h4>${item.name}</h4>
-        <p>₹${price} × ${qty}</p>
-      </div>
+    const info = document.createElement("div");
+    info.className = "item-info";
 
-      <div class="qty-controls">
-        <button onclick="updateQty(${index}, -1)">−</button>
-        <span>${qty}</span>
-        <button onclick="updateQty(${index}, 1)">+</button>
-      </div>
+    const name = document.createElement("h4");
+    name.textContent = item.name || "Menu item";
+
+    const priceInfo = document.createElement("p");
+    priceInfo.textContent = `₹${price.toFixed(2)} × ${qty}`;
+
+    info.append(name, priceInfo);
+
+    const controls = document.createElement("div");
+    controls.className = "qty-controls";
+    controls.innerHTML = `
+      <button type="button" onclick="updateQty(${index}, -1)">−</button>
+      <span>${qty}</span>
+      <button type="button" onclick="updateQty(${index}, 1)">+</button>
     `;
 
+    div.append(info, controls);
     cartItemsDiv.appendChild(div);
   });
 
@@ -56,21 +82,22 @@ function loadCart() {
 
     const feeDiv = document.createElement("div");
     feeDiv.className = "delivery-fee";
-    feeDiv.innerHTML = "<p>Delivery Fee: ₹40</p>";
+    feeDiv.textContent = "Delivery Fee: ₹40";
     cartItemsDiv.appendChild(feeDiv);
   }
 
-  totalSpan.innerText = total.toFixed(2);
+  totalSpan.textContent = total.toFixed(2);
   updateCartCount();
 }
 
 /* ================= UPDATE QUANTITY ================= */
+
 function updateQty(index, change) {
-  let cart = getCart();
+  const cart = getCart();
 
   if (!cart[index]) return;
 
-  cart[index].quantity += change;
+  cart[index].quantity = Number(cart[index].quantity) + change;
 
   if (cart[index].quantity <= 0) {
     cart.splice(index, 1);
@@ -81,12 +108,18 @@ function updateQty(index, change) {
 }
 
 /* ================= TOAST ================= */
+
 function showToast(message, type = "success", callback = null) {
   const toast = document.getElementById("toast");
-  if (!toast) return;
+
+  if (!toast) {
+    alert(message);
+    if (callback) callback();
+    return;
+  }
 
   toast.textContent = message;
-  toast.className = "toast " + type;
+  toast.className = `toast ${type}`;
   toast.classList.add("show");
 
   setTimeout(() => {
@@ -95,9 +128,10 @@ function showToast(message, type = "success", callback = null) {
   }, 2500);
 }
 
-/* ================= PRIMARY BUTTON HANDLER ================= */
+/* ================= PRIMARY BUTTON ================= */
+
 function handlePrimaryAction() {
-  const paymentMode = document.getElementById("paymentMode").value;
+  const paymentMode = document.getElementById("paymentMode")?.value;
 
   if (paymentMode === "upi") {
     proceedToUpi();
@@ -107,6 +141,7 @@ function handlePrimaryAction() {
 }
 
 /* ================= BUILD ORDER DATA ================= */
+
 function buildOrderData() {
   const cart = getCart();
 
@@ -115,21 +150,23 @@ function buildOrderData() {
     return null;
   }
 
-  const orderType = document.getElementById("orderType").value;
-  const paymentMode = document.getElementById("paymentMode").value;
+  const orderType = document.getElementById("orderType")?.value;
+  const paymentMode = document.getElementById("paymentMode")?.value;
 
   let deliveryAddress = null;
 
   if (orderType === "delivery") {
-    deliveryAddress = document.getElementById("deliveryAddress")?.value;
+    deliveryAddress =
+      document.getElementById("deliveryAddress")?.value.trim();
 
-    if (!deliveryAddress || deliveryAddress.trim() === "") {
+    if (!deliveryAddress) {
       showToast("Please enter delivery address 📍", "error");
       return null;
     }
   }
 
-  const orderNote = document.getElementById("orderNote")?.value || "";
+  const orderNote =
+    document.getElementById("orderNote")?.value || "";
 
   return {
     order_type: orderType,
@@ -138,12 +175,13 @@ function buildOrderData() {
     order_note: orderNote,
     items: cart.map(item => ({
       product_id: item.product_id,
-      quantity: item.quantity
+      quantity: Number(item.quantity)
     }))
   };
 }
 
 /* ================= CASH ORDER ================= */
+
 function placeCashOrder() {
   const orderData = buildOrderData();
   if (!orderData) return;
@@ -152,6 +190,7 @@ function placeCashOrder() {
 }
 
 /* ================= UPI FLOW ================= */
+
 function proceedToUpi() {
   const orderData = buildOrderData();
   if (!orderData) return;
@@ -159,41 +198,73 @@ function proceedToUpi() {
   openUpiModal(orderData);
 }
 
-function openUpiModal(orderData) {
+async function openUpiModal(orderData) {
   pendingOrderData = orderData;
 
   const cart = getCart();
-  let total = 0;
 
-  cart.forEach(item => {
-    total += item.price * item.quantity;
-  });
+  let total = cart.reduce(
+    (sum, item) =>
+      sum + (Number(item.price) || 0) * (Number(item.quantity) || 0),
+    0
+  );
 
-  // Load QR from backend
-  fetch(`/api/payment/upi-qr?amount=${total}`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        document.getElementById("upiQrImg").src = data.qr;
+  if (orderData.order_type === "delivery") {
+    total += 40;
+  }
+
+  const amountEl = document.getElementById("upiAmount");
+  const modal = document.getElementById("upiModal");
+
+  if (amountEl) amountEl.textContent = total.toFixed(2);
+  if (modal) modal.classList.add("active");
+
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/payment/upi-qr?amount=${encodeURIComponent(total)}`,
+      {
+        method: "GET",
+        credentials: "include"
       }
-    });
+    );
 
+    if (!response.ok) {
+      throw new Error(`UPI QR request failed: HTTP ${response.status}`);
+    }
 
-  const orderType = document.getElementById("orderType")?.value;
-  if (orderType === "delivery") total += 40;
+    const data = await response.json();
 
-  document.getElementById("upiAmount").innerText = total.toFixed(2);
-  document.getElementById("upiModal").classList.add("active");
+    if (data.success && data.qr) {
+      const qrImage = document.getElementById("upiQrImg");
+      if (qrImage) qrImage.src = data.qr;
+    } else {
+      showToast("Unable to generate UPI QR code.", "error");
+    }
+  } catch (error) {
+    console.error("UPI QR error:", error);
+    showToast("Unable to load UPI QR code.", "error");
+  }
 }
 
 function closeUpiModal() {
   pendingOrderData = null;
-  document.getElementById("transactionIdInput").value = "";
-  document.getElementById("upiModal").classList.remove("active");
+
+  const transactionInput =
+    document.getElementById("transactionIdInput");
+  const modal = document.getElementById("upiModal");
+
+  if (transactionInput) transactionInput.value = "";
+  if (modal) modal.classList.remove("active");
 }
 
 function verifyAndPlaceOrder() {
-  const txnId = document.getElementById("transactionIdInput").value.trim();
+  if (!pendingOrderData) {
+    showToast("Please start the UPI payment process again.", "error");
+    return;
+  }
+
+  const txnId =
+    document.getElementById("transactionIdInput")?.value.trim();
 
   if (!txnId) {
     showToast("Please enter transaction ID ❗", "error");
@@ -204,23 +275,46 @@ function verifyAndPlaceOrder() {
 }
 
 /* ================= SUBMIT ORDER ================= */
+
 async function submitOrder(orderData, transactionId) {
+  if (!orderData) return;
+
+  const payload = { ...orderData };
+
   if (transactionId) {
-    orderData.transaction_id = transactionId;
+    payload.transaction_id = transactionId;
   }
 
   try {
-    const response = await fetch("/api/orders", {
+    const response = await fetch(`${API_BASE_URL}/orders`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
       credentials: "include",
-      body: JSON.stringify(orderData)
+      body: JSON.stringify(payload)
     });
 
-    const data = await response.json();
+    // Read as text first so HTML errors don't cause a JSON parse crash.
+    const responseText = await response.text();
+
+    let data;
+
+    try {
+      data = responseText ? JSON.parse(responseText) : {};
+    } catch {
+      throw new Error(
+        `Server returned a non-JSON response (HTTP ${response.status}). ` +
+        "Check the backend route and server logs."
+      );
+    }
 
     if (!response.ok || !data.success) {
-      showToast(data.message || "Failed to place order ❌", "error");
+      showToast(
+        data.message || `Failed to place order (HTTP ${response.status})`,
+        "error"
+      );
       return;
     }
 
@@ -229,48 +323,57 @@ async function submitOrder(orderData, transactionId) {
     let successMessage = "Order placed ☕";
 
     if (data.table_number) {
-      successMessage += `\n🪑 Table: ${data.table_number}`;
+      successMessage += ` | Table: ${data.table_number}`;
     }
 
     if (data.estimated_time) {
-      successMessage += `\n🕒 Estimated time: ${data.estimated_time}`;
+      successMessage += ` | Estimated time: ${data.estimated_time}`;
     }
 
     showToast(successMessage, "success", () => {
       localStorage.removeItem("cart");
-      window.location.href = "/customer/orders.html";
+      window.location.href = "../customer/orders.html";
     });
 
   } catch (error) {
     console.error("FRONTEND ORDER ERROR:", error);
-    showToast("Server error. Please try again ❌", "error");
+    showToast(error.message || "Unable to place order. Please try again.", "error");
   }
 }
 
-/* ================= BUTTON TEXT SWITCH ================= */
+/* ================= BUTTON TEXT ================= */
+
 function updatePlaceOrderButton() {
   const paymentMode = document.getElementById("paymentMode")?.value;
   const btn = document.getElementById("placeOrderBtn");
 
   if (!btn) return;
 
-  if (paymentMode === "upi") {
-    btn.innerText = "Proceed to Pay 💳";
-  } else {
-    btn.innerText = "Place Order ☕";
-  }
+  btn.textContent =
+    paymentMode === "upi"
+      ? "Proceed to Pay 💳"
+      : "Place Order ☕";
 }
 
 /* ================= CART COUNT ================= */
+
 function updateCartCount() {
   const cart = getCart();
-  const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  const count = cart.reduce(
+    (sum, item) => sum + Math.max(0, Number(item.quantity) || 0),
+    0
+  );
 
   const badge = document.getElementById("cartCount");
-  if (badge) badge.innerText = count;
+
+  if (badge) {
+    badge.textContent = count;
+  }
 }
 
 /* ================= ORDER TYPE CHANGE ================= */
+
 const orderTypeSelect = document.getElementById("orderType");
 const extraFields = document.getElementById("extraFields");
 
@@ -279,44 +382,62 @@ if (orderTypeSelect) {
 }
 
 function handleOrderTypeChange() {
+  if (!orderTypeSelect || !extraFields) return;
+
   const type = orderTypeSelect.value;
   extraFields.innerHTML = "";
 
   if (type === "dine-in") {
-    extraFields.innerHTML = `
-      <div class="info-text">
-        🪑 Table will be assigned automatically.
-      </div>
-    `;
+    const info = document.createElement("div");
+    info.className = "info-text";
+    info.textContent = "🪑 Table will be assigned automatically.";
+    extraFields.appendChild(info);
   }
 
   if (type === "delivery") {
-    extraFields.innerHTML = `
-      <label>Delivery Address</label>
-      <textarea id="deliveryAddress" placeholder="Enter delivery address"></textarea>
-    `;
+    const label = document.createElement("label");
+    label.htmlFor = "deliveryAddress";
+    label.textContent = "Delivery Address";
+
+    const textarea = document.createElement("textarea");
+    textarea.id = "deliveryAddress";
+    textarea.placeholder = "Enter delivery address";
+
+    extraFields.append(label, textarea);
   }
 
   loadCart();
 }
 
 /* ================= LOGOUT ================= */
-function logout() {
-  fetch("/api/auth/logout", {
-    credentials: "include"
-  }).finally(() => {
-    localStorage.clear();
-    window.location.href = "/auth/login.html";
-  });
+
+async function logout() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/logout`, {
+      method: "POST",
+      credentials: "include"
+    });
+
+    if (!response.ok) {
+      console.error("Logout failed:", response.status);
+    }
+  } catch (error) {
+    console.error("Logout error:", error);
+  } finally {
+    localStorage.removeItem("cart");
+    window.location.href = "../auth/login.html";
+  }
 }
 
 /* ================= INIT ================= */
+
 document.addEventListener("DOMContentLoaded", () => {
   loadCart();
   updateCartCount();
   updatePlaceOrderButton();
 
   const paymentSelect = document.getElementById("paymentMode");
+
   if (paymentSelect) {
     paymentSelect.addEventListener("change", updatePlaceOrderButton);
   }

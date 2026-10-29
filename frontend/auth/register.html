@@ -37,24 +37,76 @@
         <h2>Create Account</h2>
         <p class="subtitle">Start your CafeFlow journey</p>
 
-        <!-- IMPORTANT: fake fields to block autofill -->
-        <input type="text" style="display:none">
-        <input type="password" style="display:none">
+        <!-- Hidden fields to discourage unwanted autofill -->
+        <input
+          type="text"
+          name="fake-username"
+          autocomplete="username"
+          tabindex="-1"
+          aria-hidden="true"
+          style="display:none"
+        >
 
-        <!-- Actual fields -->
-        <input id="name" type="text" placeholder="Full Name" autocomplete="off" />
+        <input
+          type="password"
+          name="fake-password"
+          autocomplete="current-password"
+          tabindex="-1"
+          aria-hidden="true"
+          style="display:none"
+        >
 
-        <!-- use different autocomplete tokens -->
-        <input id="email" type="email" placeholder="Email Address" autocomplete="new-email" />
+        <!-- Registration fields -->
+        <input
+          id="name"
+          name="name"
+          type="text"
+          placeholder="Full Name"
+          autocomplete="name"
+          required
+        />
 
-        <input id="password" type="password" placeholder="Create Password" autocomplete="new-password" />
+        <input
+          id="email"
+          name="email"
+          type="email"
+          placeholder="Email Address"
+          autocomplete="email"
+          required
+        />
 
-        <input id="phone" type="tel" placeholder="Phone Number" autocomplete="off" />
+        <input
+          id="password"
+          name="password"
+          type="password"
+          placeholder="Create Password"
+          autocomplete="new-password"
+          required
+        />
 
-        <!-- themed message box (matches login) -->
-        <div id="authMessage" class="auth-message"></div>
+        <input
+          id="phone"
+          name="phone"
+          type="tel"
+          placeholder="Phone Number"
+          autocomplete="tel"
+          required
+        />
 
-        <button class="btn primary" onclick="register()">
+        <!-- Registration status message -->
+        <div
+          id="authMessage"
+          class="auth-message"
+          role="status"
+          aria-live="polite"
+        ></div>
+
+        <button
+          id="registerButton"
+          class="btn primary"
+          type="button"
+          onclick="register()"
+        >
           Register
         </button>
 

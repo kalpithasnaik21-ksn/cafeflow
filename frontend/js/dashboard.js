@@ -1,10 +1,11 @@
 let allOrders = [];
+
 console.log("dashboard.js loaded");
 
 /* ===============================
-   API BASE
+   API CONFIGURATION
 ================================ */
-const API_BASE = "/api/admin/orders";
+const API_BASE = "http://127.0.0.1:5000/api/admin/orders";
 
 /* ===============================
    SELECTORS
@@ -21,433 +22,487 @@ const totalOrdersEl = document.getElementById("totalOrders");
 const todayOrdersEl = document.getElementById("todayOrders");
 
 /* ===============================
+   API HELPER
+================================ */
+async function apiRequest(url, options = {}) {
+    const response = await fetch(url, {
+        credentials: "include",
+        ...options,
+        headers: {
+            ...(options.headers || {})
+        }
+    });
+
+    const contentType = response.headers.get("content-type") || "";
+
+    if (!contentType.includes("application/json")) {
+        const responseText = await response.text();
+
+        throw new Error(
+            `Expected JSON but received a non-JSON response. ` +
+            `URL: ${url}. HTTP status: ${response.status}. ` +
+            `Check your backend URL and route configuration.`
+        );
+    }
+
+    const data = await response.json();
+
+    if (response.status === 401 || response.status === 403) {
+        showToast("Admin session expired. Please log in again.", true);
+
+        throw new Error("Unauthorized. Please log in again.");
+    }
+
+    if (!response.ok) {
+        throw new Error(
+            data.message || `Request failed with status ${response.status}`
+        );
+    }
+
+    return data;
+}
+
+/* ===============================
    LOAD ORDERS
 ================================ */
 async function loadOrders() {
-  try {
-    const res = await fetch(API_BASE, { credentials: "include" });
-
-    if (res.status === 401 || res.status === 403) {
-      showToast("Session expired. Please login again ❌", true);
-      setTimeout(logout, 1500);
-      return;
+    if (!ordersTable) {
+        console.error(
+            'Orders table not found. Check that your HTML contains id="ordersTable".'
+        );
+        return;
     }
 
-    const response = await res.json();
-    if (!response.success) {
-      showToast("Failed to load orders ❌", true);
-      return;
+    try {
+        const response = await apiRequest(API_BASE);
+
+        if (!response.success) {
+            showToast(response.message || "Failed to load orders.", true);
+            return;
+        }
+
+        const orders = Array.isArray(response.data) ? response.data : [];
+
+        allOrders = orders;
+
+        renderOrders(orders);
+        updateStats(orders);
+
+    } catch (error) {
+        console.error("Load orders error:", error);
+
+        if (!error.message.includes("Unauthorized")) {
+            showToast("Unable to load orders. Check the backend.", true);
+        }
     }
-
-    const orders = response.data || [];
-
-    allOrders = orders;   // 🔥 STORE GLOBALLY
-
-    renderOrders(orders);
-    updateStats(orders);
-
-  } catch (err) {
-    console.error("Load orders error:", err);
-  }
 }
-
 
 /* ===============================
    RENDER ORDERS TABLE
 ================================ */
-
 function renderOrders(orders) {
+    if (!ordersTable) return;
 
-  allOrders = orders;   // 🔥 store globally for viewOrder()
+    ordersTable.innerHTML = "";
 
-  ordersTable.innerHTML = "";
+    if (!orders.length) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
 
-  orders.forEach(order => {
+        cell.colSpan = 8;
+        cell.textContent = "No orders found.";
+        cell.style.textAlign = "center";
 
-    const row = document.createElement("tr");
+        row.appendChild(cell);
+        ordersTable.appendChild(row);
+        return;
+    }
 
-    row.innerHTML = `
-      <td>#${order.order_number}</td>
-      <td>${order.customer_name}</td>
-      <td>${getOrderTypeLabel(order.order_type)}</td>
-      <td>${order.total_items || 0}</td>
-      <td>₹${Number(order.total_amount).toFixed(2)}</td>
-      <td>${formatTime(order.created_at)}</td>
-      <td>${formatStatus(order.status)}</td>
-      <td>
-        <button class="btn-view" onclick="viewOrder(${order.id})">View</button>
-        ${getNextStatus(order)
-        ? `<button class="btn-action"
-               onclick="updateOrderStatus(${order.id}, '${getNextStatus(order)}')">
-               → ${getNextStatus(order).replace(/_/g, " ").toUpperCase()}
-             </button>`
-        : ""
-      }
-      </td>
-    `;
+    orders.forEach(order => {
+        const row = document.createElement("tr");
 
-    ordersTable.appendChild(row);
-  });
+        const nextStatus = getNextStatus(order);
+
+        row.innerHTML = `
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>
+                <button class="btn-view"
+                    onclick="viewOrder(${Number(order.id)})">
+                    View
+                </button>
+                ${
+                    nextStatus
+                        ? `<button class="btn-action"
+                            onclick="updateOrderStatus(
+                                ${Number(order.id)},
+                                '${nextStatus}'
+                            )">
+                            → ${nextStatus.replace(/_/g, " ").toUpperCase()}
+                           </button>`
+                        : ""
+                }
+            </td>
+        `;
+
+        const cells = row.querySelectorAll("td");
+
+        cells[0].textContent = `#${order.order_number ?? order.id}`;
+        cells[1].textContent = order.customer_name || "Customer";
+        cells[2].textContent = getOrderTypeLabel(order.order_type);
+        cells[3].textContent = order.total_items ?? order.items_count ?? 0;
+        cells[4].textContent =
+            `₹${Number(order.total_amount || 0).toFixed(2)}`;
+        cells[5].textContent = formatTime(order.created_at);
+        cells[6].textContent = formatStatus(order.status);
+
+        ordersTable.appendChild(row);
+    });
 }
 
-
-/* ===============================
-   UPDATE ORDER STATUS
-================================ */
 /* ===============================
    UPDATE ORDER STATUS
 ================================ */
 async function updateOrderStatus(orderId, newStatus) {
-  try {
-    const res = await fetch(`/api/admin/orders/${orderId}/status`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      credentials: "include",
-      body: JSON.stringify({ status: newStatus })
-    });
+    try {
+        const data = await apiRequest(`${API_BASE}/${orderId}/status`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ status: newStatus })
+        });
 
-    const data = await res.json();
+        if (!data.success) {
+            showToast(data.message || "Status update failed.", true);
+            return;
+        }
 
-    if (!res.ok || !data.success) {
-      showToast(data.message || "Status update failed ❌", true);
-      return;
+        showToast("Order status updated successfully.");
+
+        closeModal();
+        await loadOrders();
+        await loadSummary();
+
+    } catch (error) {
+        console.error("Status update error:", error);
+
+        if (!error.message.includes("Unauthorized")) {
+            showToast(error.message || "Error updating status.", true);
+        }
     }
-
-    showToast("Status updated successfully ✅");
-    closeModal();
-    loadOrders();
-
-  } catch (err) {
-    console.error("Status error:", err);
-    showToast("Error updating status ❌", true);
-  }
-}
-
-
-
-
-/* ===============================
-   TOAST
-================================ */
-function showToast(message, error = false) {
-  const toast = document.getElementById("toast");
-  if (!toast) return;
-
-  toast.textContent = message;
-  toast.style.background = error
-    ? "linear-gradient(135deg,#ff8d8d,#ff6f6f)"
-    : "linear-gradient(135deg,#caa36a,#a9743a)";
-
-  requestAnimationFrame(() => {
-    toast.style.opacity = "1";
-    toast.style.transform = "translateY(0)";
-  });
-
-  setTimeout(() => {
-    toast.style.opacity = "0";
-    toast.style.transform = "translateY(20px)";
-  }, 2500);
 }
 
 /* ===============================
    VIEW ORDER DETAILS
 ================================ */
 function viewOrder(orderId) {
+    const order = allOrders.find(
+        item => Number(item.id) === Number(orderId)
+    );
 
-  const order = allOrders.find(o => o.id === orderId);
-  if (!order) return;
+    if (!order) {
+        showToast("Order not found.", true);
+        return;
+    }
 
-  const modal = document.getElementById("orderModal");
+    const modal = document.getElementById("orderModal");
 
-  let typeSection = "";
+    if (!modal) {
+        showToast('Order modal not found. Check id="orderModal".', true);
+        return;
+    }
 
-  if (order.order_type === "delivery") {
-    typeSection = `
-      <p>🚚 <strong>Delivery</strong></p>
-      <p>📍 Address: ${order.delivery_address || "Not Provided"}</p>
+    let typeSection = "";
+
+    if (order.order_type === "delivery") {
+        typeSection = `
+            <p><strong>🚚 Delivery</strong></p>
+            <p>Address: ${order.delivery_address || "Not provided"}</p>
+        `;
+    } else if (order.order_type === "dine-in") {
+        typeSection = `
+            <p><strong>🪑 Dine-In</strong></p>
+            <p>Table No: ${order.table_number || "Not assigned"}</p>
+        `;
+    } else if (order.order_type === "takeaway") {
+        typeSection = `<p><strong>🥡 Takeaway</strong></p>`;
+    }
+
+    const noteSection = order.order_note
+        ? `<hr><p><strong>Special Instructions:</strong></p>
+           <p>${order.order_note}</p>`
+        : "";
+
+    const nextStatus = getNextStatus(order);
+
+    const actionButton = nextStatus
+        ? `<button class="btn-action"
+              onclick="updateOrderStatus(${Number(order.id)}, '${nextStatus}')">
+              → ${nextStatus.replace(/_/g, " ").toUpperCase()}
+           </button>`
+        : "";
+
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h2>Order Details</h2>
+
+            <p><strong>Order #:</strong> ${order.order_number ?? order.id}</p>
+            <p><strong>Customer:</strong> ${order.customer_name || "Customer"}</p>
+
+            ${typeSection}
+
+            <p><strong>Payment:</strong> ${formatPayment(order)}</p>
+
+            ${getVerifyButton(order)}
+            ${noteSection}
+
+            <hr>
+
+            <p><strong>Status:</strong> ${formatStatus(order.status)}</p>
+
+            ${actionButton}
+
+            <button class="btn-close" onclick="closeModal()">Close</button>
+        </div>
     `;
-  }
 
-  if (order.order_type === "dine-in") {
-    typeSection = `
-      <p>🪑 <strong>Dine-In</strong></p>
-      <p>Table No: ${order.table_number || "Not Assigned"}</p>
-    `;
-  }
-
-  if (order.order_type === "takeaway") {
-    typeSection = `
-      <p>🥡 <strong>Takeaway</strong></p>
-    `;
-  }
-
-  const noteSection = order.order_note
-    ? `<hr><p><strong>📝 Special Instructions:</strong></p><p>${order.order_note}</p>`
-    : "";
-
-  const nextStatus = getNextStatus(order);
-
-  const actionButton = nextStatus
-    ? `<button class="btn-action"
-         onclick="updateOrderStatus(${order.id}, '${nextStatus}')">
-         → ${nextStatus.replace(/_/g, " ").toUpperCase()}
-       </button>`
-    : "";
-
-  modal.innerHTML = `
-    <div class="modal-content">
-      <h2>Order Details</h2>
-
-      <p><strong>Order #:</strong> ${order.order_number}</p>
-      <p><strong>Customer:</strong> ${order.customer_name}</p>
-
-      ${typeSection}
-
-<p>
-  <strong>Payment:</strong>
-  ${formatPayment(order)}
-</p>
-${getVerifyButton(order)}
-
-
-      ${noteSection}
-
-      <hr>
-
-      <p><strong>Status:</strong> ${formatStatus(order.status)}</p>
-
-      ${actionButton}
-
-      <button class="btn-close" onclick="closeModal()">Close</button>
-    </div>
-  `;
-
-  modal.style.display = "flex";
+    modal.style.display = "flex";
 }
 
+/* ===============================
+   PAYMENT VERIFICATION BUTTON
+================================ */
 function getVerifyButton(order) {
+    if (
+        order.payment_mode === "upi" &&
+        order.payment_status === "pending"
+    ) {
+        return `
+            <button class="btn-action"
+                onclick="verifyPayment(${Number(order.id)})">
+                Verify Payment
+            </button>
+        `;
+    }
 
-  if (
-    order.payment_mode === "upi" &&
-    order.payment_status === "pending"
-  ) {
-    return `
-      <button class="btn-action"
-        onclick="verifyPayment(${order.id})">
-        Verify Payment
-      </button>
-    `;
-  }
-
-  return "";
+    return "";
 }
 
-function openUpiModal(orderData) {
-  pendingOrderData = orderData;
+/* ===============================
+   VERIFY UPI PAYMENT
+================================ */
+async function verifyPayment(orderId) {
+    try {
+        const data = await apiRequest(
+            `${API_BASE}/${orderId}/verify-payment`,
+            { method: "PUT" }
+        );
 
-  const cart = getCart();
-  let total = 0;
+        if (!data.success) {
+            showToast(data.message || "Payment verification failed.", true);
+            return;
+        }
 
-  cart.forEach(item => {
-    total += item.price * item.quantity;
-  });
+        showToast("Payment verified successfully.");
 
-  document.getElementById("upiAmount").innerText = total.toFixed(2);
-  document.getElementById("upiModal").classList.add("active");
+        closeModal();
+        await loadOrders();
+
+    } catch (error) {
+        console.error("Payment verification error:", error);
+
+        if (!error.message.includes("Unauthorized")) {
+            showToast(error.message || "Payment verification failed.", true);
+        }
+    }
 }
 
-
+/* ===============================
+   CLOSE MODAL
+================================ */
 function closeModal() {
-  const modal = document.getElementById("orderModal");
-  modal.style.display = "none";
-}
+    const modal = document.getElementById("orderModal");
 
+    if (modal) {
+        modal.style.display = "none";
+    }
+}
 
 /* ===============================
    PAYMENT TEXT
 ================================ */
-function getPaymentText(order) {
-  if (order.payment_mode === "upi") return "💳 Paid via UPI";
-  if (order.status === "completed") return "✅ Cash collected";
-  if (order.status === "cancelled") return "❌ Payment cancelled";
-  return "💵 Cash to be collected";
-}
-
 function formatPayment(order) {
+    if (order.payment_mode === "cash") {
+        if (order.status === "completed") {
+            return "💵 Cash (Collected)";
+        }
 
-  // ================= CASH =================
-  if (order.payment_mode === "cash") {
+        if (order.status === "cancelled") {
+            return "💵 Cash (Not Collected)";
+        }
 
-    if (order.status === "completed") {
-      return `💵 Cash (Collected)`;
+        if (order.status === "ready") {
+            return "💵 Cash (Collect at Counter)";
+        }
+
+        return "💵 Cash (To be Collected)";
     }
 
-    if (order.status === "cancelled") {
-      return `💵 Cash (Not Collected)`;
+    if (order.payment_mode === "upi") {
+        if (order.payment_status === "paid") {
+            return "💳 UPI (Paid)";
+        }
+
+        if (order.status === "cancelled") {
+            return "💳 UPI (Refund Required)";
+        }
+
+        const transactionId = order.transaction_id
+            ? ` — Transaction ID: ${order.transaction_id}`
+            : "";
+
+        return `💳 UPI (Pending Verification)${transactionId}`;
     }
 
-    if (order.status === "ready") {
-      return `💵 Cash (Collect at Counter)`;
-    }
-
-    return `💵 Cash (To be Collected)`;
-  }
-
-  // ================= UPI =================
-  if (order.payment_mode === "upi") {
-
-    if (order.payment_status === "paid") {
-      return `💳 UPI (Paid)`;
-    }
-
-    if (order.status === "cancelled") {
-      return `💳 UPI (Refund Required)`;
-    }
-
-    return `
-    💳 UPI (Pending Verification)
-    ${order.transaction_id
-        ? `<div class="txn-id"><b>Txn ID: ${order.transaction_id}</b></div>`
-        : ""
-      }
-  `;
-  }
-
-  return order.payment_mode;
+    return order.payment_mode || "Not specified";
 }
-
-
-async function verifyPayment(orderId) {
-  try {
-    const res = await fetch(
-      `/api/admin/orders/${orderId}/verify-payment`,
-      {
-        method: "PUT",
-        credentials: "include"
-      }
-    );
-
-    const data = await res.json();
-
-    if (!res.ok || !data.success) {
-      showToast(data.message || "Verification failed ❌", true);
-      return;
-    }
-
-    showToast("Payment verified ✅");
-
-    closeModal();
-    loadOrders();
-
-  } catch (err) {
-    console.error(err);
-    showToast("Server error ❌", true);
-  }
-}
-
 
 /* ===============================
-   DASHBOARD STATS
+   DASHBOARD STATISTICS
 ================================ */
 function updateStats(orders) {
-  const count = s => orders.filter(o => o.status === s).length;
+    const count = status =>
+        orders.filter(order => order.status === status).length;
 
-  statNew.innerText = count("placed");
-  statActive.innerText = count("preparing");
-  statReady.innerText = count("ready");
-  statCompleted.innerText = count("completed");
-  statCancelled.innerText = count("cancelled");
+    if (statNew) statNew.textContent = count("placed");
+    if (statActive) statActive.textContent = count("preparing");
+    if (statReady) statReady.textContent = count("ready");
+    if (statCompleted) statCompleted.textContent = count("completed");
+    if (statCancelled) statCancelled.textContent = count("cancelled");
 }
 
 /* ===============================
-   STATUS FLOW
-================================ */
-function getNextStatus(order) {
-
-  const statusFlow = {
-    "delivery": [
-      "placed",
-      "preparing",
-      "ready",
-      "dispatched",
-      "completed"
-    ],
-
-    "dine-in": [
-      "placed",
-      "preparing",
-      "ready",
-      "completed"
-    ],
-    "takeaway": [
-      "placed",
-      "preparing",
-      "ready",
-      "completed"
-    ]
-  };
-
-  const flow = statusFlow[order.order_type];
-  const currentIndex = flow.indexOf(order.status);
-
-  if (currentIndex < flow.length - 1) {
-    return flow[currentIndex + 1];
-  }
-
-  return null;
-}
-
-/* ===============================
-   SUMMARY
+   LOAD SUMMARY COUNTS
 ================================ */
 async function loadSummary() {
-  try {
-    const res = await fetch(`${API_BASE}/dashboard`, {
-      credentials: "include"
-    });
+    try {
+        const data = await apiRequest(`${API_BASE}/dashboard`);
 
-    if (!res.ok) return;
+        if (totalOrdersEl) {
+            totalOrdersEl.textContent = data.totalOrders ?? 0;
+        }
 
-    const data = await res.json();
-    totalOrdersEl.innerText = data.totalOrders ?? 0;
-    todayOrdersEl.innerText = data.todayOrders ?? 0;
+        if (todayOrdersEl) {
+            todayOrdersEl.textContent = data.todayOrders ?? 0;
+        }
 
-  } catch (err) {
-    console.error("Summary error:", err);
-  }
+    } catch (error) {
+        console.error("Dashboard summary error:", error);
+    }
+}
+
+/* ===============================
+   ORDER STATUS FLOW
+================================ */
+function getNextStatus(order) {
+    const statusFlow = {
+        delivery: [
+            "placed",
+            "preparing",
+            "ready",
+            "dispatched",
+            "completed"
+        ],
+        "dine-in": [
+            "placed",
+            "preparing",
+            "ready",
+            "completed"
+        ],
+        takeaway: [
+            "placed",
+            "preparing",
+            "ready",
+            "completed"
+        ]
+    };
+
+    const flow = statusFlow[order.order_type];
+
+    if (!flow) return null;
+
+    const currentIndex = flow.indexOf(order.status);
+
+    if (currentIndex >= 0 && currentIndex < flow.length - 1) {
+        return flow[currentIndex + 1];
+    }
+
+    return null;
 }
 
 /* ===============================
    HELPERS
 ================================ */
 function getOrderTypeLabel(type) {
-  if (type === "dine-in") return "🪑 Dine-In";
-  if (type === "takeaway") return "🥡 Takeaway";
-  return "🚚 Delivery";
+    if (type === "dine-in") return "🪑 Dine-In";
+    if (type === "takeaway") return "🥡 Takeaway";
+    if (type === "delivery") return "🚚 Delivery";
+
+    return type || "Unknown";
 }
 
 function formatStatus(status) {
-  return status.replace(/_/g, " ").toUpperCase();
+    return String(status || "unknown")
+        .replace(/_/g, " ")
+        .toUpperCase();
 }
 
 function formatTime(time) {
-  return new Date(time).toLocaleTimeString();
-}
+    if (!time) return "—";
 
-function logout() {
-  window.location.href = "../auth/login.html";
+    const date = new Date(time);
+
+    if (Number.isNaN(date.getTime())) return "—";
+
+    return date.toLocaleString();
 }
 
 /* ===============================
-   INIT
+   LOGOUT
+================================ */
+async function logout() {
+    try {
+        await fetch("http://127.0.0.1:5000/api/auth/logout", {
+            method: "POST",
+            credentials: "include"
+        });
+    } catch (error) {
+        console.error("Logout request failed:", error);
+    }
+
+    window.location.href = "../auth/login.html";
+}
+
+/* ===============================
+   INITIALIZATION
 ================================ */
 loadOrders();
 loadSummary();
-setInterval(loadOrders, 5000);
 
-// expose for inline onclick
+// Refresh orders periodically.
+setInterval(loadOrders, 10000);
+
+/* ===============================
+   EXPOSE INLINE HANDLERS
+================================ */
 window.updateOrderStatus = updateOrderStatus;
 window.viewOrder = viewOrder;
 window.closeModal = closeModal;
+window.verifyPayment = verifyPayment;
+window.logout = logout;
